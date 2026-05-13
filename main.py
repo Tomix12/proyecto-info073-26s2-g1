@@ -35,72 +35,35 @@ MANZANA = 3
 # del tablero que se encuentra en función reiniciar().
 FILAS = 15
 COLUMNAS = 15
+#Cantidad de obstaculos que tendra el nivel pero despues modificaremos para ajustar la cantidad segun niveles 
+CANT_OBSTACULOS= 10
+BORDE = (
+[( c , 0) for c in range ( COLUMNAS ) ]
++ [( c , FILAS - 1) for c in range ( COLUMNAS ) ]
++ [(0 , f ) for f in range (1 , FILAS - 1) ]
++ [( COLUMNAS - 1 , f ) for f in range (1 , FILAS - 1) ]
+)
 
 
-def aparecer_aleatorio(tablero, id_elem):
-    """
-    Coloca un elemento en una casilla vacía aleatoria del tablero.
+def aparecer_aleatorio ( tablero , id_elem , incluir_borde = True ) :
+  vacios = []
+  for fila in range ( FILAS ) :
+    for columna in range ( COLUMNAS ) :
+        if tablero [ fila ][ columna ] == VACIO :
+            vacios . append (( columna , fila ) )
 
-    Parámetros:
-        - tablero: El tablero con sus posiciones actuales.
-        - id_elem: El número identificador del elemento que queremos colocar.
+    if not incluir_borde :
+       vacios = [ pos for pos in vacios if pos not in BORDE ]
+    if len( vacios ) == 0:
+       return -1 , -1
+    columna , fila = random . choice ( vacios )
+    tablero [ fila ][ columna ] = id_elem
+    return columna , fila
 
-    Retorna:
-        - (columna, fila): Tupla que indica posición en la que se colocó el elemento.
-    """
-
-    # Debemos detectar los espacios vacíos, para ello recorremos
-    # el tablero y almacenamos tuplas de (columna, fila) las posiciones
-    # en las que un elemento "VACIO" (el número 0 en este caso) se encuentre.
-    vacios = []
-
-    # Forma vista en clases de recorrer el arreglo multidimensional.
-    # Tanto fila como columna son números.
-    for fila in range(FILAS):
-        for columna in range(COLUMNAS):
-            # Obtenemos el elemento que se encuentra en esa fila y columna.
-            elem_pos = tablero[fila][columna]
-
-            if elem_pos == VACIO:
-                # Al utilizar los paréntesis () dentro de la función, lo estaremos
-                # añadiendo como una tupla con la estructura (columna, fila).
-                vacios.append((columna, fila))
-
-    # También se puede utilizar comprensión de listas para rellenar el arreglo
-    # a la vez que lo recorremos:
-    #
-    # vacios = [
-    #     (columna, fila)
-    #     for fila in range(FILAS)
-    #     for columna in range(COLUMNAS)
-    #     if tablero[fila][columna] == VACIO
-    # ]
-
-    # Si no hay casillas vacías, retornamos un valor especial.
-    if len(vacios) == 0:
-        return -1, -1
-
-    # Usando la función random.choice(lista) podremos obtener una tupla
-    # aleatoria desde el arreglo "vacios" que definimos anteriormente.
-    columna, fila = random.choice(vacios)
-
-    # Finalmente, colocamos el elemento al poner su número en la casilla
-    # del tablero correspondiente.
-    tablero[fila][columna] = id_elem
-
-    return columna, fila
-
-
-def poblar_tablero(tablero):
-    """
-    Coloca un obstáculo y la manzana en el tablero.
-
-    Parámetros:
-        - tablero: El tablero con sus posiciones actuales.
-    """
-    aparecer_aleatorio(tablero, OBSTACULO)
-    aparecer_aleatorio(tablero, MANZANA)
-
+def poblar_tablero ( tablero ) :
+    for i in range ( CANT_OBSTACULOS ) :
+        aparecer_aleatorio ( tablero , OBSTACULO , incluir_borde = False )
+    aparecer_aleatorio ( tablero , MANZANA )
 
 def refrescar_tablero(screen, tablero):
     """
