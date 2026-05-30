@@ -22,7 +22,7 @@ PANTALLA_VICTORIA = "pantalla_victoria.bmp"
 PANTALLA_DERROTA = "pantalla_derrota.bmp"
 
 # Para evitar que el jugador se mueva demasiado rápido
-RETRASO = 200
+RETRASO = 100
 
 # Códigos de cada elemento del tablero
 VACIO = 0
@@ -32,40 +32,77 @@ MANZANA = 3
 
 # Tamaño del tablero
 # Si se cambian estas constantes, se debe modificar la definición
-# del tablero que se encuentra en función reiniciar().
+# del tablero que se encuentra1 en función reiniciar().
 FILAS = 15
 COLUMNAS = 15
-#Cantidad de obstaculos que tendra el nivel pero despues modificaremos para ajustar la cantidad segun niveles 
-CANT_OBSTACULOS= 10
-BORDE = (
-[( c , 0) for c in range ( COLUMNAS ) ]
-+ [( c , FILAS - 1) for c in range ( COLUMNAS ) ]
-+ [(0 , f ) for f in range (1 , FILAS - 1) ]
-+ [( COLUMNAS - 1 , f ) for f in range (1 , FILAS - 1) ]
-)
 
 
-def aparecer_aleatorio ( tablero , id_elem , incluir_borde = True ) :
-  vacios = []
-  for fila in range ( FILAS ) :
-    for columna in range ( COLUMNAS ) :
-        if tablero [ fila ][ columna ] == VACIO :
-            vacios . append (( columna , fila ) )
+def aparecer_aleatorio(tablero, id_elem):
+    """
+    Coloca un elemento en una casilla vacía aleatoria del tablero.
 
-    if not incluir_borde :
-       vacios = [ pos for pos in vacios if pos not in BORDE ]
-    if len( vacios ) == 0:
-       return -1 , -1
-    columna , fila = random . choice ( vacios )
-    tablero [ fila ][ columna ] = id_elem
-    return columna , fila
+    Parámetros:
+        - tablero: El tablero con sus posiciones actuales.
+        - id_elem: El número identificador del elemento que queremos colocar.
 
-def poblar_tablero ( tablero ) :
-    for i in range ( CANT_OBSTACULOS ) :
-        aparecer_aleatorio ( tablero , OBSTACULO , incluir_borde = False )
-    aparecer_aleatorio ( tablero , MANZANA )
+    Retorna:
+        - (columna, fila): Tupla que indica posición en la que se colocó el elemento.
+    """
 
-def refrescar_tablero(screen, tablero):
+    # Debemos detectar los espacios vacíos, para ello recorremos
+    # el tablero y almacenamos tuplas de (columna, fila) las posiciones
+    # en las que un elemento "VACIO" (el número 0 en este caso) se encuentre.
+    vacios = []
+
+    # Forma vista en clases de recorrer el arreglo multidimensional.
+    # Tanto fila como columna son números.
+    for fila in range(FILAS):
+        for columna in range(COLUMNAS):
+            # Obtenemos el elemento que se encuentra en esa fila y columna.
+            elem_pos = tablero[fila][columna]
+
+            if elem_pos == VACIO:
+                # Al utilizar los paréntesis () dentro de la función, lo estaremos
+                # añadiendo como una tupla con la estructura (columna, fila).
+                vacios.append((columna, fila))
+
+    # También se puede utilizar comprensión de listas para rellenar el arreglo
+    # a la vez que lo recorremos:
+    #
+    # vacios = [
+    #     (columna, fila)
+    #     for fila in range(FILAS)
+    #     for columna in range(COLUMNAS)
+    #     if tablero[fila][columna] == VACIO
+    # ]
+
+    # Si no hay casillas vacías, retornamos un valor especial.
+    if len(vacios) == 0:
+        return -1, -1
+
+    # Usando la función random.choice(lista) podremos obtener una tupla
+    # aleatoria desde el arreglo "vacios" que definimos anteriormente.
+    columna, fila = random.choice(vacios)
+
+    # Finalmente, colocamos el elemento al poner su número en la casilla
+    # del tablero correspondiente.
+    tablero[fila][columna] = id_elem
+
+    return columna, fila
+
+
+def poblar_tablero(tablero):
+    """
+    Coloca un obstáculo y la manzana en el tablero.
+
+    Parámetros:
+        - tablero: El tablero con sus posiciones actuales.
+    """
+    aparecer_aleatorio(tablero, OBSTACULO)
+    aparecer_aleatorio(tablero, MANZANA)
+
+
+def refrescar_tablero(screen, tablero, fondo, roca):
     """
     Dibuja el estado actual del tablero en la pantalla.
 
@@ -76,7 +113,7 @@ def refrescar_tablero(screen, tablero):
 
     # Rellena la pantalla con el color gris, básicamente pintando
     # por encima de lo que estaba anteriormente.
-    screen.fill("gray30")
+    screen.blit(fondo, (0,0))# modifique el codigo que pinta para que en vez de pintar la pantalla ponga la imagen 
 
     # Podemos calcular el tamaño en pixeles que tendrá cada
     # casilla al dividir tanto la altura de la pantalla (screen.get_height())
@@ -96,13 +133,8 @@ def refrescar_tablero(screen, tablero):
         pos_x = 0
         for j in range(COLUMNAS):
             if tablero[i][j] == OBSTACULO:
-                # Dibuja un rectángulo en la posición (pos_x, pos_y) y que sea
-                # de tamaño (ancho_elem, alto_elem) y color negro.
-                pygame.draw.rect(
-                    screen,
-                    "black",
-                    pygame.Rect((pos_x, pos_y), (ancho_elem, alto_elem)),
-                )
+                roca_escalada = pygame.transform.scale(roca,(int(ancho_elem)*1.4, int(alto_elem)*1.4))
+                screen.blit(roca_escalada,(pos_x,pos_y))
             elif tablero[i][j] == JUGADOR:
                 # Dibujamos un círculo verde en la posición (pos_x + radio, pos_y + radio),
                 # con un radio definido por la variable "radio" (ancho_elem / 2).
@@ -300,10 +332,12 @@ def mostrar_pantalla(screen, nombre_archivo):
 
 def main():
     pygame.init()
-
-    # Establecemos la resolución de la pantalla.
-    screen = pygame.display.set_mode((800, 800))
-
+    DIR_BACKGROUND= os.path.join(os.path.dirname(__file__),"data","background","Fondo.jpg") #Esto es del fondo en carpeta background que subire
+    fondo=pygame.image.load(DIR_BACKGROUND)         #Nota de Tomás: este codigo carga el directorio del fondo  
+    fondo= pygame.transform.scale(fondo, (800, 800)) #Este codigo transforma la escala de la imagen a 800x800 pixeles(aunque lo cambie antes de ingresaar)
+    DIR_roca=os.path.join("data","sprites","OBSTACULO.png")#Nota tomás: ruta de la roca     
+    screen= pygame.display.set_mode((800, 800))#Esta es la escala en la que correra el juego(no la imagen)
+    roca=pygame.image.load(DIR_roca).convert_alpha()
     # Establecemos el título de la ventana.
     pygame.display.set_caption("Juego Básico")
 
@@ -335,7 +369,7 @@ def main():
                         # Obtiene tiempo en milisegundos
                         tiempo_ultimo_mov = pygame.time.get_ticks()
                         estado = ESTADO_JUGANDO
-                        refrescar_tablero(screen, tablero)
+                        refrescar_tablero(screen, tablero, fondo, roca)
                     elif evento.key == pygame.K_i:
                         estado = ESTADO_INSTRUCCIONES
                         mostrar_pantalla(screen, PANTALLA_INSTRUCCIONES)
@@ -350,7 +384,7 @@ def main():
                         direccion = (0, 0)
                         tiempo_ultimo_mov = pygame.time.get_ticks()
                         estado = ESTADO_JUGANDO
-                        refrescar_tablero(screen, tablero)
+                        refrescar_tablero(screen, tablero, fondo, roca)
 
                     if evento.key == pygame.K_ESCAPE:
                         estado = ESTADO_INICIO
@@ -375,7 +409,7 @@ def main():
                     mostrar_pantalla(screen, PANTALLA_VICTORIA)
                 else:
                     tiempo_ultimo_mov = tiempo_actual
-                    refrescar_tablero(screen, tablero)
+                    refrescar_tablero(screen, tablero, fondo, roca)
 
     pygame.quit()
 
