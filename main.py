@@ -22,7 +22,7 @@ PANTALLA_VICTORIA = "pantalla_victoria.bmp"
 PANTALLA_DERROTA = "pantalla_derrota.bmp"
 
 # Para evitar que el jugador se mueva demasiado rápido
-RETRASO = 100
+RETRASO = 200
 
 # Códigos de cada elemento del tablero
 VACIO = 0
@@ -102,7 +102,7 @@ def poblar_tablero(tablero):
     aparecer_aleatorio(tablero, MANZANA)
 
 
-def refrescar_tablero(screen, tablero, fondo, roca):
+def refrescar_tablero(screen, tablero, fondo, roca, sprite_actual ):
     """
     Dibuja el estado actual del tablero en la pantalla.
 
@@ -136,15 +136,9 @@ def refrescar_tablero(screen, tablero, fondo, roca):
                 roca_escalada = pygame.transform.scale(roca,(int(ancho_elem)*1.4, int(alto_elem)*1.4))
                 screen.blit(roca_escalada,(pos_x,pos_y))
             elif tablero[i][j] == JUGADOR:
-                # Dibujamos un círculo verde en la posición (pos_x + radio, pos_y + radio),
-                # con un radio definido por la variable "radio" (ancho_elem / 2).
-                pygame.draw.circle(
-                    screen,
-                    "green",
-                    (pos_x + radio, pos_y + radio),
-                    radio,
-                )
-            elif tablero[i][j] == MANZANA:
+                 screen.blit(sprite_actual,(pos_x,pos_y))
+                
+            elif tablero[i][j] == MANZANA: 
                 pygame.draw.rect(
                     screen,
                     "red",
@@ -337,6 +331,18 @@ def main():
     fondo= pygame.transform.scale(fondo, (800, 800)) #Este codigo transforma la escala de la imagen a 800x800 pixeles(aunque lo cambie antes de ingresaar)
     DIR_roca=os.path.join("data","sprites","OBSTACULO.png")#Nota tomás: ruta de la roca     
     screen= pygame.display.set_mode((800, 800))#Esta es la escala en la que correra el juego(no la imagen)
+    # por aqui importamos los archivos sprites de los mvimentos de los personajes
+    frente=[pygame.image.load("data/personaje/01.png").convert_alpha(),pygame.image.load("data/personaje/02.png").convert_alpha(), pygame.image.load("data/personaje/03.png").convert_alpha(), pygame.image.load("data/personaje/04.png").convert_alpha()]
+    espalda=[pygame.image.load("data/personaje/05.png").convert_alpha(),pygame.image.load("data/personaje/06.png").convert_alpha(), pygame.image.load("data/personaje/07.png").convert_alpha(), pygame.image.load("data/personaje/08.png").convert_alpha()]
+    izquierda=[pygame.image.load("data/personaje/09.png").convert_alpha(),pygame.image.load("data/personaje/10.png").convert_alpha(), pygame.image.load("data/personaje/11.png").convert_alpha(), pygame.image.load("data/personaje/12.png").convert_alpha()]
+    derecha=[pygame.image.load("data/personaje/13.png").convert_alpha(),pygame.image.load("data/personaje/14.png").convert_alpha(), pygame.image.load("data/personaje/15.png").convert_alpha(), pygame.image.load("data/personaje/16.png").convert_alpha()]
+    #Definimos el tamaño de celda para ajustar la escala del mono a la celda y no hayan incosistencias  
+    tam_celda=800//15
+    frente=[pygame.transform.scale(s,(tam_celda, tam_celda)) for s in frente]
+    espalda=[pygame.transform.scale(s,(tam_celda, tam_celda)) for s in espalda]
+    izquierda=[pygame.transform.scale(s,(tam_celda, tam_celda)) for s in izquierda]
+    derecha=[pygame.transform.scale(s,(tam_celda, tam_celda)) for s in derecha]
+
     roca=pygame.image.load(DIR_roca).convert_alpha()
     # Establecemos el título de la ventana.
     pygame.display.set_caption("Juego Básico")
@@ -347,6 +353,10 @@ def main():
     tablero = []
     pos_jugador = (0, 0)
     direccion = (0, 0)
+    frame_actual=0
+    tiempo_animacion = 0
+    velocidad_animacion = 120
+    sprite_actual= frente[0]
     tiempo_ultimo_mov = 0
 
     mostrar_pantalla(screen, PANTALLA_INICIO)
@@ -369,7 +379,7 @@ def main():
                         # Obtiene tiempo en milisegundos
                         tiempo_ultimo_mov = pygame.time.get_ticks()
                         estado = ESTADO_JUGANDO
-                        refrescar_tablero(screen, tablero, fondo, roca)
+                        refrescar_tablero(screen, tablero, fondo, roca, sprite_actual)
                     elif evento.key == pygame.K_i:
                         estado = ESTADO_INSTRUCCIONES
                         mostrar_pantalla(screen, PANTALLA_INSTRUCCIONES)
@@ -384,23 +394,54 @@ def main():
                         direccion = (0, 0)
                         tiempo_ultimo_mov = pygame.time.get_ticks()
                         estado = ESTADO_JUGANDO
-                        refrescar_tablero(screen, tablero, fondo, roca)
+                        refrescar_tablero(screen, tablero, fondo, roca, sprite_actual)
 
                     if evento.key == pygame.K_ESCAPE:
                         estado = ESTADO_INICIO
                         mostrar_pantalla(screen, PANTALLA_INICIO)
 
                 elif estado == ESTADO_JUGANDO:
-                    direccion = cambiar_direccion(pygame.key.get_pressed(), direccion)
+                    keys=pygame.key.get_pressed()
+                    if keys[pygame.K_w]:
+                        direccion=(0,-1)
+                        sprite_actual=espalda[frame_actual]
+                    elif keys[pygame.K_s]:
+                        direccion=(0,1)
+                        sprite_actual=frente[frame_actual]          
+                    elif keys[pygame.K_a]:
+                        direccion=(-1,0)
+                        sprite_actual=izquierda[frame_actual]
+                    elif  keys[pygame.K_d]:
+                        direccion=(1,0)
+                        sprite_actual=derecha[frame_actual]
+                                
 
         if estado == ESTADO_JUGANDO:
-            tiempo_actual = pygame.time.get_ticks()  # En milisegundos
-
-            # La variable RETRASO hace que si no han pasado esa cantidad de ticks,
-            # entonces no se avanzará en el tablero.
+          tiempo_actual = pygame.time.get_ticks()  # En milisegundos
+          #animacion
+          if direccion != (0,0) and tiempo_actual - tiempo_animacion >= velocidad_animacion:
+            frame_actual = (frame_actual + 1) % 4
+            tiempo_animacion = tiempo_actual
+            if direccion == (0,-1):
+                sprite_actual = espalda[frame_actual]
+            elif direccion==(0,1):
+                sprite_actual=frente[frame_actual]
+            elif direccion==(-1,0):
+                sprite_actual=izquierda[frame_actual]
+            elif direccion==(1,0):
+                sprite_actual=derecha[frame_actual]
+            refrescar_tablero(screen, tablero, fondo, roca, sprite_actual)
+ 
             if direccion != (0, 0) and tiempo_actual - tiempo_ultimo_mov >= RETRASO:
                 resultado, pos_jugador = avanzar(tablero, pos_jugador, direccion)
-
+                if direccion==(0,-1):
+                    sprite_actual=espalda[frame_actual]
+                elif direccion==(0,1):
+                    sprite_actual=frente[frame_actual]
+                elif direccion==(-1,0):
+                    sprite_actual=izquierda[frame_actual]
+                elif direccion==(1,0):
+                    sprite_actual=derecha[frame_actual]
                 if resultado == "derrota":
                     estado = ESTADO_DERROTA
                     mostrar_pantalla(screen, PANTALLA_DERROTA)
@@ -409,7 +450,7 @@ def main():
                     mostrar_pantalla(screen, PANTALLA_VICTORIA)
                 else:
                     tiempo_ultimo_mov = tiempo_actual
-                    refrescar_tablero(screen, tablero, fondo, roca)
+                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual)
 
     pygame.quit()
 
