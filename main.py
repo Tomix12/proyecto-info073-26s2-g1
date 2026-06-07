@@ -22,20 +22,33 @@ PANTALLA_VICTORIA = "pantalla_victoria.bmp"
 PANTALLA_DERROTA = "pantalla_derrota.bmp"
 
 # Para evitar que el jugador se mueva demasiado rápido
-RETRASO = 200
+RETRASO = 100
 
 # Códigos de cada elemento del tablero
 VACIO = 0
 OBSTACULO = 1
 JUGADOR = 2
-MANZANA = 3
+PUERTA = 3
+MANZANA = 4
+PLACA = 5
+FUEGO = 6
+
 
 # Tamaño del tablero
 # Si se cambian estas constantes, se debe modificar la definición
 # del tablero que se encuentra1 en función reiniciar().
 FILAS = 15
 COLUMNAS = 15
-
+def reiniciar_stats():
+    VIDAS = 2
+    RETRASO = 200
+    NUM_ORBES = 0
+    NUM_PLACAS = 0
+    return VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS
+    
+def aparecer_varios(tablero, id_elem, cantidad):
+    for num in range(cantidad):
+        aparecer_aleatorio(tablero,id_elem)
 
 def aparecer_aleatorio(tablero, id_elem):
     """
@@ -98,8 +111,9 @@ def poblar_tablero(tablero):
     Parámetros:
         - tablero: El tablero con sus posiciones actuales.
     """
-    aparecer_aleatorio(tablero, OBSTACULO)
-    aparecer_aleatorio(tablero, MANZANA)
+    aparecer_varios(tablero, OBSTACULO, 5)
+    aparecer_varios(tablero, MANZANA, 2)
+    aparecer_varios(tablero, FUEGO, 2)
 
 
 def refrescar_tablero(screen, tablero, fondo, roca, sprite_actual ):
@@ -144,6 +158,35 @@ def refrescar_tablero(screen, tablero, fondo, roca, sprite_actual ):
                     "red",
                     # Acá reducimos el tamaño del rectángulo
                     # para identificarlo más fácilmente
+                    pygame.Rect(
+                        (pos_x + 10, pos_y + 10),
+                        (ancho_elem - 20, alto_elem - 20),
+                    ),
+                )
+            elif tablero[i][j] == FUEGO:
+                # Dibujamos un círculo verde en la posición (pos_x + radio, pos_y + radio),
+                # con un radio definido por la variable "radio" (ancho_elem / 2).
+                pygame.draw.circle(
+                    screen,
+                    "orange",
+                    (pos_x + radio, pos_y + radio),
+                    radio,
+                )
+            elif tablero[i][j] == PUERTA:
+                pygame.draw.rect(
+                    screen,
+                    "red",
+                    # Acá reducimos el tamaño del rectángulo
+                    # para identificarlo más fácilmente
+                    pygame.Rect(
+                        (pos_x + 10, pos_y + 10),
+                        (ancho_elem - 20, alto_elem - 20),
+                    ),
+                )
+            elif tablero[i][j] == PLACA:
+                pygame.draw.rect(
+                    screen,
+                    "white",
                     pygame.Rect(
                         (pos_x + 10, pos_y + 10),
                         (ancho_elem - 20, alto_elem - 20),
@@ -235,16 +278,28 @@ def avanzar(tablero, pos_jugador, direccion):
     if pos_elem == OBSTACULO:
         return "derrota", pos_jugador
 
-    if pos_elem == MANZANA:
+    if pos_elem == PUERTA:
         return "victoria", (ind_nueva_col, ind_nueva_fila)
-
+    
+    if pos_elem == MANZANA:
+        tablero[ind_actual_fila][ind_actual_col] = VACIO
+        tablero[ind_nueva_fila][ind_nueva_col] = JUGADOR
+        return "orbe", (ind_nueva_col, ind_nueva_fila)
+   
+    if pos_elem == FUEGO:
+        tablero[ind_actual_fila][ind_actual_col] = VACIO
+        tablero[ind_nueva_fila][ind_nueva_col] = JUGADOR
+        return "fuego", (ind_nueva_col, ind_nueva_fila)
+   
+    if pos_elem == PLACA:
+        tablero[ind_actual_fila][ind_actual_col] = VACIO
+        tablero[ind_nueva_fila][ind_nueva_col] = JUGADOR
+        return "placa", (ind_nueva_col, ind_nueva_fila)
     # Movimiento normal, si es que no encontramos manzana ni obstáculo.
     tablero[ind_actual_fila][ind_actual_col] = VACIO
     tablero[ind_nueva_fila][ind_nueva_col] = JUGADOR
 
     return "ok", (ind_nueva_col, ind_nueva_fila)
-
-
 def reiniciar():
     """
     Crea un nuevo tablero y estado para una nueva partida.
@@ -358,6 +413,7 @@ def main():
     velocidad_animacion = 120
     sprite_actual= frente[0]
     tiempo_ultimo_mov = 0
+    VIDAS,RETRASO,NUM_ORBES,NUM_PLACAS=reiniciar_stats()
 
     mostrar_pantalla(screen, PANTALLA_INICIO)
 
@@ -375,6 +431,7 @@ def main():
                 if estado == ESTADO_INICIO:
                     if evento.key == pygame.K_SPACE:
                         tablero, pos_jugador = reiniciar()
+                        VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS = reiniciar_stats()
                         direccion = (0, 0)
                         # Obtiene tiempo en milisegundos
                         tiempo_ultimo_mov = pygame.time.get_ticks()
@@ -391,6 +448,7 @@ def main():
                 elif estado in (ESTADO_DERROTA, ESTADO_VICTORIA):
                     if evento.key == pygame.K_r:
                         tablero, pos_jugador = reiniciar()
+                        VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS = reiniciar_stats()
                         direccion = (0, 0)
                         tiempo_ultimo_mov = pygame.time.get_ticks()
                         estado = ESTADO_JUGANDO
@@ -445,9 +503,49 @@ def main():
                 if resultado == "derrota":
                     estado = ESTADO_DERROTA
                     mostrar_pantalla(screen, PANTALLA_DERROTA)
+                    VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS = reiniciar_stats()
+
                 elif resultado == "victoria":
                     estado = ESTADO_VICTORIA
                     mostrar_pantalla(screen, PANTALLA_VICTORIA)
+                    VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS = reiniciar_stats()
+
+                elif resultado == "orbe":
+                    NUM_ORBES += 1
+                    RETRASO -= 20
+
+                    if NUM_ORBES == 2 or NUM_ORBES == 4 or NUM_ORBES == 6:
+                        aparecer_aleatorio(tablero, PLACA)
+
+                    tiempo_ultimo_mov = tiempo_actual
+                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual)
+
+                elif resultado == "placa":
+                    NUM_PLACAS += 1
+
+                    if NUM_PLACAS < 3:
+                        aparecer_varios(tablero, MANZANA, 2)
+
+                    if NUM_PLACAS == 3:
+                        aparecer_aleatorio(tablero, PUERTA)
+
+                    tiempo_ultimo_mov = tiempo_actual
+                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual)
+
+                elif resultado == "fuego":
+                    VIDAS -= 1
+
+                    if RETRASO != 200:
+                        RETRASO += 20
+
+                    tiempo_ultimo_mov = tiempo_actual
+                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual)
+
+                    if VIDAS == 0:
+                        estado = ESTADO_DERROTA
+                        mostrar_pantalla(screen, PANTALLA_DERROTA)
+                        VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS = reiniciar_stats()
+
                 else:
                     tiempo_ultimo_mov = tiempo_actual
                     refrescar_tablero(screen, tablero, fondo, roca, sprite_actual)
