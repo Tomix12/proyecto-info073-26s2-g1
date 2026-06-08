@@ -116,7 +116,7 @@ def poblar_tablero(tablero):
     aparecer_varios(tablero, FUEGO, 2)
 
 
-def refrescar_tablero(screen, tablero, fondo, roca, sprite_actual ):
+def refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa):
     """
     Dibuja el estado actual del tablero en la pantalla.
 
@@ -153,46 +153,13 @@ def refrescar_tablero(screen, tablero, fondo, roca, sprite_actual ):
                  screen.blit(sprite_actual,(pos_x,pos_y))
                 
             elif tablero[i][j] == MANZANA: 
-                pygame.draw.rect(
-                    screen,
-                    "red",
-                    # Acá reducimos el tamaño del rectángulo
-                    # para identificarlo más fácilmente
-                    pygame.Rect(
-                        (pos_x + 10, pos_y + 10),
-                        (ancho_elem - 20, alto_elem - 20),
-                    ),
-                )
+                screen.blit(sprite_manzana, (pos_x, pos_y))
             elif tablero[i][j] == FUEGO:
-                # Dibujamos un círculo verde en la posición (pos_x + radio, pos_y + radio),
-                # con un radio definido por la variable "radio" (ancho_elem / 2).
-                pygame.draw.circle(
-                    screen,
-                    "orange",
-                    (pos_x + radio, pos_y + radio),
-                    radio,
-                )
+                 screen.blit(sprite_fuego, (pos_x, pos_y))
             elif tablero[i][j] == PUERTA:
-                pygame.draw.rect(
-                    screen,
-                    "red",
-                    # Acá reducimos el tamaño del rectángulo
-                    # para identificarlo más fácilmente
-                    pygame.Rect(
-                        (pos_x + 10, pos_y + 10),
-                        (ancho_elem - 20, alto_elem - 20),
-                    ),
-                )
+                screen.blit(sprite_puerta, (pos_x, pos_y))
             elif tablero[i][j] == PLACA:
-                pygame.draw.rect(
-                    screen,
-                    "white",
-                    pygame.Rect(
-                        (pos_x + 10, pos_y + 10),
-                        (ancho_elem - 20, alto_elem - 20),
-                    ),
-                )
-
+                screen.blit(sprite_placa,(pos_x,pos_y))
             # Estamos recorriendo los píxeles de la pantalla, por lo que
             # debemos sumar el ancho y altura en pixeles de cada elemento que
             # ya hayamos recorrido para avanzar al siguiente.
@@ -381,6 +348,11 @@ def mostrar_pantalla(screen, nombre_archivo):
 
 def main():
     pygame.init()
+    pygame.mixer.init()
+    pygame.mixer.music.load("data/sonidos/musica.mp3")
+    pygame.mixer.music.set_volume(0.5)  # 0.0 a 1.0
+    sonido_orbe = pygame.mixer.Sound("data/sonidos/orbe.wav")
+    sonido_placa = pygame.mixer.Sound("data/sonidos/placa.wav")
     DIR_BACKGROUND= os.path.join(os.path.dirname(__file__),"data","background","Fondo.jpg") #Esto es del fondo en carpeta background que subire
     fondo=pygame.image.load(DIR_BACKGROUND)         #Nota de Tomás: este codigo carga el directorio del fondo  
     fondo= pygame.transform.scale(fondo, (800, 800)) #Este codigo transforma la escala de la imagen a 800x800 pixeles(aunque lo cambie antes de ingresaar)
@@ -393,6 +365,14 @@ def main():
     derecha=[pygame.image.load("data/personaje/13.png").convert_alpha(),pygame.image.load("data/personaje/14.png").convert_alpha(), pygame.image.load("data/personaje/15.png").convert_alpha(), pygame.image.load("data/personaje/16.png").convert_alpha()]
     #Definimos el tamaño de celda para ajustar la escala del mono a la celda y no hayan incosistencias  
     tam_celda=800//15
+    sprite_puerta = pygame.image.load("data/sprites/puerta.png").convert_alpha()
+    sprite_puerta = pygame.transform.scale(sprite_puerta, (tam_celda, tam_celda))
+    sprite_fuego = pygame.image.load("data/sprites/fuego.png").convert_alpha()
+    sprite_fuego = pygame.transform.scale(sprite_fuego, (tam_celda, tam_celda))
+    sprite_manzana = pygame.image.load("data/sprites/orbe.png").convert_alpha()
+    sprite_manzana = pygame.transform.scale(sprite_manzana, (tam_celda, tam_celda))
+    sprite_placa = pygame.image.load("data/sprites/placa.png").convert_alpha()
+    sprite_placa = pygame.transform.scale(sprite_placa, (tam_celda, tam_celda))
     frente=[pygame.transform.scale(s,(tam_celda, tam_celda)) for s in frente]
     espalda=[pygame.transform.scale(s,(tam_celda, tam_celda)) for s in espalda]
     izquierda=[pygame.transform.scale(s,(tam_celda, tam_celda)) for s in izquierda]
@@ -400,7 +380,7 @@ def main():
 
     roca=pygame.image.load(DIR_roca).convert_alpha()
     # Establecemos el título de la ventana.
-    pygame.display.set_caption("Juego Básico")
+    pygame.display.set_caption("Crimson")
 
     running = True
 
@@ -436,7 +416,8 @@ def main():
                         # Obtiene tiempo en milisegundos
                         tiempo_ultimo_mov = pygame.time.get_ticks()
                         estado = ESTADO_JUGANDO
-                        refrescar_tablero(screen, tablero, fondo, roca, sprite_actual)
+                        pygame.mixer.music.play(-1)
+                        refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
                     elif evento.key == pygame.K_i:
                         estado = ESTADO_INSTRUCCIONES
                         mostrar_pantalla(screen, PANTALLA_INSTRUCCIONES)
@@ -452,7 +433,8 @@ def main():
                         direccion = (0, 0)
                         tiempo_ultimo_mov = pygame.time.get_ticks()
                         estado = ESTADO_JUGANDO
-                        refrescar_tablero(screen, tablero, fondo, roca, sprite_actual)
+                        pygame.mixer.music.play(-1)
+                        refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
 
                     if evento.key == pygame.K_ESCAPE:
                         estado = ESTADO_INICIO
@@ -488,7 +470,7 @@ def main():
                 sprite_actual=izquierda[frame_actual]
             elif direccion==(1,0):
                 sprite_actual=derecha[frame_actual]
-            refrescar_tablero(screen, tablero, fondo, roca, sprite_actual)
+            refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
  
             if direccion != (0, 0) and tiempo_actual - tiempo_ultimo_mov >= RETRASO:
                 resultado, pos_jugador = avanzar(tablero, pos_jugador, direccion)
@@ -501,16 +483,19 @@ def main():
                 elif direccion==(1,0):
                     sprite_actual=derecha[frame_actual]
                 if resultado == "derrota":
+                    pygame.mixer.music.stop()
                     estado = ESTADO_DERROTA
                     mostrar_pantalla(screen, PANTALLA_DERROTA)
                     VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS = reiniciar_stats()
 
                 elif resultado == "victoria":
+                    pygame.mixer.music.stop()
                     estado = ESTADO_VICTORIA
                     mostrar_pantalla(screen, PANTALLA_VICTORIA)
                     VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS = reiniciar_stats()
 
                 elif resultado == "orbe":
+                    sonido_orbe.play()
                     NUM_ORBES += 1
                     RETRASO -= 20
 
@@ -518,9 +503,10 @@ def main():
                         aparecer_aleatorio(tablero, PLACA)
 
                     tiempo_ultimo_mov = tiempo_actual
-                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual)
+                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
 
                 elif resultado == "placa":
+                    sonido_placa.play()
                     NUM_PLACAS += 1
 
                     if NUM_PLACAS < 3:
@@ -530,7 +516,7 @@ def main():
                         aparecer_aleatorio(tablero, PUERTA)
 
                     tiempo_ultimo_mov = tiempo_actual
-                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual)
+                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
 
                 elif resultado == "fuego":
                     VIDAS -= 1
@@ -539,16 +525,17 @@ def main():
                         RETRASO += 20
 
                     tiempo_ultimo_mov = tiempo_actual
-                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual)
+                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
 
                     if VIDAS == 0:
                         estado = ESTADO_DERROTA
+                        pygame.mixer.music.stop()
                         mostrar_pantalla(screen, PANTALLA_DERROTA)
                         VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS = reiniciar_stats()
 
                 else:
                     tiempo_ultimo_mov = tiempo_actual
-                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual)
+                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
 
     pygame.quit()
 
