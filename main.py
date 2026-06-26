@@ -39,13 +39,7 @@ FUEGO = 6
 # del tablero que se encuentra1 en función reiniciar().
 FILAS = 15
 COLUMNAS = 15
-def reiniciar_stats():
-    VIDAS = 2
-    RETRASO = 200
-    NUM_ORBES = 0
-    NUM_PLACAS = 0
-    return VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS
-    
+
 def aparecer_varios(tablero, id_elem, cantidad):
     for num in range(cantidad):
         aparecer_aleatorio(tablero,id_elem)
@@ -348,7 +342,6 @@ def mostrar_pantalla(screen, nombre_archivo):
 
 def main():
     pygame.init()
-    pygame.mixer.init()
     pygame.mixer.music.load("data/sonidos/musica.mp3")
     pygame.mixer.music.set_volume(0.5)  # 0.0 a 1.0
     sonido_orbe = pygame.mixer.Sound("data/sonidos/orbe.wav")
@@ -377,7 +370,6 @@ def main():
     espalda=[pygame.transform.scale(s,(tam_celda, tam_celda)) for s in espalda]
     izquierda=[pygame.transform.scale(s,(tam_celda, tam_celda)) for s in izquierda]
     derecha=[pygame.transform.scale(s,(tam_celda, tam_celda)) for s in derecha]
-
     roca=pygame.image.load(DIR_roca).convert_alpha()
     # Establecemos el título de la ventana.
     pygame.display.set_caption("Crimson")
@@ -393,7 +385,7 @@ def main():
     velocidad_animacion = 120
     sprite_actual= frente[0]
     tiempo_ultimo_mov = 0
-    VIDAS,RETRASO,NUM_ORBES,NUM_PLACAS=reiniciar_stats()
+    VIDAS,RETRASO,NUM_ORBES,NUM_PLACAS,velocidad_animacion=2,200,0,0,120
 
     mostrar_pantalla(screen, PANTALLA_INICIO)
 
@@ -411,7 +403,7 @@ def main():
                 if estado == ESTADO_INICIO:
                     if evento.key == pygame.K_SPACE:
                         tablero, pos_jugador = reiniciar()
-                        VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS = reiniciar_stats()
+                        VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS,velocidad_animacion = 2,200,0,0,120
                         direccion = (0, 0)
                         # Obtiene tiempo en milisegundos
                         tiempo_ultimo_mov = pygame.time.get_ticks()
@@ -429,7 +421,7 @@ def main():
                 elif estado in (ESTADO_DERROTA, ESTADO_VICTORIA):
                     if evento.key == pygame.K_r:
                         tablero, pos_jugador = reiniciar()
-                        VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS = reiniciar_stats()
+                        VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS,velocidad_animacion= 2,200,0,0,120
                         direccion = (0, 0)
                         tiempo_ultimo_mov = pygame.time.get_ticks()
                         estado = ESTADO_JUGANDO
@@ -486,18 +478,19 @@ def main():
                     pygame.mixer.music.stop()
                     estado = ESTADO_DERROTA
                     mostrar_pantalla(screen, PANTALLA_DERROTA)
-                    VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS = reiniciar_stats()
+                    VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS,velocidad_animacion = 2,200,0,0,120
 
                 elif resultado == "victoria":
                     pygame.mixer.music.stop()
                     estado = ESTADO_VICTORIA
                     mostrar_pantalla(screen, PANTALLA_VICTORIA)
-                    VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS = reiniciar_stats()
+                    VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS, velocidad_animacion = 2,200,0,0,120
 
                 elif resultado == "orbe":
                     sonido_orbe.play()
                     NUM_ORBES += 1
                     RETRASO -= 20
+                    velocidad_animacion -=10
 
                     if NUM_ORBES == 2 or NUM_ORBES == 4 or NUM_ORBES == 6:
                         aparecer_aleatorio(tablero, PLACA)
@@ -523,6 +516,8 @@ def main():
 
                     if RETRASO != 200:
                         RETRASO += 20
+                        velocidad_animacion +=10
+
 
                     tiempo_ultimo_mov = tiempo_actual
                     refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
@@ -531,7 +526,7 @@ def main():
                         estado = ESTADO_DERROTA
                         pygame.mixer.music.stop()
                         mostrar_pantalla(screen, PANTALLA_DERROTA)
-                        VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS = reiniciar_stats()
+                        VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS, velocidad_animacion = 2,200,0,0,120
 
                 else:
                     tiempo_ultimo_mov = tiempo_actual
