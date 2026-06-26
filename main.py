@@ -386,6 +386,9 @@ def main():
     sprite_actual= frente[0]
     tiempo_ultimo_mov = 0
     VIDAS,RETRASO,NUM_ORBES,NUM_PLACAS,velocidad_animacion=2,200,0,0,120
+    tiempo_inicio = None       # Momento en que comienza el cronómetro
+    cronometro_activo = False  # Indica si ya empezó
+    TIEMPO_LIMITE = 25000      # 25 segundos (pygame trabaja en milisegundos)
 
     mostrar_pantalla(screen, PANTALLA_INICIO)
 
@@ -409,6 +412,8 @@ def main():
                         tiempo_ultimo_mov = pygame.time.get_ticks()
                         estado = ESTADO_JUGANDO
                         pygame.mixer.music.play(-1)
+                        tiempo_inicio = None
+                        cronometro_activo = False
                         refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
                     elif evento.key == pygame.K_i:
                         estado = ESTADO_INSTRUCCIONES
@@ -426,6 +431,8 @@ def main():
                         tiempo_ultimo_mov = pygame.time.get_ticks()
                         estado = ESTADO_JUGANDO
                         pygame.mixer.music.play(-1)
+                        tiempo_inicio = None
+                        cronometro_activo = False
                         refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
 
                     if evento.key == pygame.K_ESCAPE:
@@ -434,6 +441,14 @@ def main():
 
                 elif estado == ESTADO_JUGANDO:
                     keys=pygame.key.get_pressed()
+                    if not cronometro_activo and (
+                        keys[pygame.K_w] or
+                        keys[pygame.K_s] or
+                        keys[pygame.K_a] or
+                        keys[pygame.K_d]
+                    ):
+                        tiempo_inicio = pygame.time.get_ticks()
+                        cronometro_activo = True
                     if keys[pygame.K_w]:
                         direccion=(0,-1)
                         sprite_actual=espalda[frame_actual]
@@ -444,14 +459,21 @@ def main():
                         direccion=(-1,0)
                         sprite_actual=izquierda[frame_actual]
                     elif  keys[pygame.K_d]:
-                        direccion=(1,0)
+                        direccion=(1,0) 
                         sprite_actual=derecha[frame_actual]
                                 
 
         if estado == ESTADO_JUGANDO:
           tiempo_actual = pygame.time.get_ticks()  # En milisegundos
+          if cronometro_activo:
+            tiempo_transcurrido = tiempo_actual - tiempo_inicio
+
+            if tiempo_transcurrido >= TIEMPO_LIMITE:
+                    pygame.mixer.music.stop()
+                    estado = ESTADO_DERROTA
+                    mostrar_pantalla(screen, PANTALLA_DERROTA)
           #animacion
-          if direccion != (0,0) and tiempo_actual - tiempo_animacion >= velocidad_animacion:
+        if direccion != (0,0) and tiempo_actual - tiempo_animacion >= velocidad_animacion:
             frame_actual = (frame_actual + 1) % 4
             tiempo_animacion = tiempo_actual
             if direccion == (0,-1):
