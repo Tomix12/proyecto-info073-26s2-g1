@@ -29,7 +29,7 @@ VACIO = 0
 OBSTACULO = 1
 JUGADOR = 2
 PUERTA = 3
-MANZANA = 4
+ORBE = 4
 PLACA = 5
 FUEGO = 6
 
@@ -40,9 +40,9 @@ FUEGO = 6
 FILAS = 15
 COLUMNAS = 15
 
-def aparecer_varios(tablero, id_elem, cantidad):
+def aparecer_varios(tablero, id_elem1, id_elem2, distancia, cantidad):
     for num in range(cantidad):
-        aparecer_aleatorio(tablero,id_elem)
+        aparecer_restringido(tablero, id_elem1, id_elem2, distancia)
 
 def aparecer_aleatorio(tablero, id_elem):
     """
@@ -97,6 +97,41 @@ def aparecer_aleatorio(tablero, id_elem):
 
     return columna, fila
 
+def aparecer_restringido(tablero, id_elem1, id_elem2, distancia):
+    if isinstance(id_elem2, int):
+        id_elem2 = (id_elem2,)
+    vacios = []
+
+    for fila in range(FILAS):
+        for columna in range(COLUMNAS):
+
+            if tablero[fila][columna] != VACIO:
+                continue
+
+            permitido = True
+
+            for f in range(FILAS):
+                for c in range(COLUMNAS):
+
+                    if tablero[f][c] in id_elem2:
+
+                        if (columna-c)**2 + (fila-f)**2 <= distancia**2:
+                            permitido = False
+                            break
+
+                if not permitido:
+                    break
+
+            if permitido:
+                vacios.append((columna, fila))
+
+    if len(vacios) == 0:
+        return -1, -1
+
+    columna, fila = random.choice(vacios)
+    tablero[fila][columna] = id_elem1
+
+    return columna, fila
 
 def poblar_tablero(tablero):
     """
@@ -105,9 +140,10 @@ def poblar_tablero(tablero):
     Parámetros:
         - tablero: El tablero con sus posiciones actuales.
     """
-    aparecer_varios(tablero, OBSTACULO, 5)
-    aparecer_varios(tablero, MANZANA, 2)
-    aparecer_varios(tablero, FUEGO, 2)
+    
+    aparecer_varios(tablero, OBSTACULO, (OBSTACULO,JUGADOR), 1, 5)
+    aparecer_varios(tablero, ORBE, (ORBE,JUGADOR), 6, 2)
+    aparecer_varios(tablero, FUEGO, (FUEGO,JUGADOR), 3, 2)
 
 
 def refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa):
@@ -146,7 +182,7 @@ def refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta
             elif tablero[i][j] == JUGADOR:
                  screen.blit(sprite_actual,(pos_x,pos_y))
                 
-            elif tablero[i][j] == MANZANA: 
+            elif tablero[i][j] == ORBE: 
                 screen.blit(sprite_manzana, (pos_x, pos_y))
             elif tablero[i][j] == FUEGO:
                  screen.blit(sprite_fuego, (pos_x, pos_y))
@@ -242,7 +278,7 @@ def avanzar(tablero, pos_jugador, direccion):
     if pos_elem == PUERTA:
         return "victoria", (ind_nueva_col, ind_nueva_fila)
     
-    if pos_elem == MANZANA:
+    if pos_elem == ORBE:
         tablero[ind_actual_fila][ind_actual_col] = VACIO
         tablero[ind_nueva_fila][ind_nueva_col] = JUGADOR
         return "orbe", (ind_nueva_col, ind_nueva_fila)
@@ -515,7 +551,8 @@ def main():
                     velocidad_animacion -=10
 
                     if NUM_ORBES == 2 or NUM_ORBES == 4 or NUM_ORBES == 6:
-                        aparecer_aleatorio(tablero, PLACA)
+                        aparecer_restringido(tablero, PLACA, JUGADOR, 5)
+                        aparecer_varios(tablero, FUEGO, (FUEGO,JUGADOR), 2, 2)
 
                     tiempo_ultimo_mov = tiempo_actual
                     refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
@@ -525,10 +562,12 @@ def main():
                     NUM_PLACAS += 1
 
                     if NUM_PLACAS < 3:
-                        aparecer_varios(tablero, MANZANA, 2)
+                        aparecer_varios(tablero, ORBE, (ORBE,JUGADOR), 6, 2)
+                        aparecer_varios(tablero, FUEGO, (FUEGO,JUGADOR), 2, 2)
 
                     if NUM_PLACAS == 3:
-                        aparecer_aleatorio(tablero, PUERTA)
+                        aparecer_restringido(tablero, PUERTA, JUGADOR, 7)
+                        aparecer_varios(tablero, FUEGO, (FUEGO,JUGADOR), 2, 2)
 
                     tiempo_ultimo_mov = tiempo_actual
                     refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
