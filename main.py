@@ -10,7 +10,33 @@ ESTADO_INSTRUCCIONES = "instrucciones"
 ESTADO_JUGANDO = "jugando"
 ESTADO_DERROTA = "derrota"
 ESTADO_VICTORIA = "victoria"
+NIVEL=1
+MAX_NIVELES=3
+CONFIG_NIVELES = {
+    1: {
+        "vidas": 2,
+        "tiempo": 25000,
+        "obstaculos": 5,
+        "fuegos": 2,
+        "orbes": 2
+    },
 
+    2: {
+        "vidas": 2,
+        "tiempo": 20000,
+        "obstaculos": 9,
+        "fuegos": 5,
+        "orbes": 3
+    },
+
+    3: {
+        "vidas": 1,
+        "tiempo": 15000,
+        "obstaculos": 13,
+        "fuegos": 8,
+        "orbes": 4
+    }
+}
 # Rutas a la carpeta de imágenes de pantallas
 DIR_PANTALLAS = os.path.join(os.path.dirname(__file__), "data", "pantallas")
 
@@ -133,20 +159,30 @@ def aparecer_restringido(tablero, id_elem1, id_elem2, distancia):
 
     return columna, fila
 
-def poblar_tablero(tablero):
-    """
-    Coloca un obstáculo y la manzana en el tablero.
-
-    Parámetros:
-        - tablero: El tablero con sus posiciones actuales.
-    """
-    
-    aparecer_varios(tablero, OBSTACULO, (OBSTACULO,JUGADOR), 1, 5)
-    aparecer_varios(tablero, ORBE, (ORBE,JUGADOR), 6, 2)
-    aparecer_varios(tablero, FUEGO, (FUEGO,JUGADOR), 3, 2)
-
-
-def refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa):
+def poblar_tablero(tablero,nivel):
+    datos = CONFIG_NIVELES[nivel]
+    aparecer_varios(
+        tablero,
+        OBSTACULO,
+        (OBSTACULO, JUGADOR),
+        1,
+        datos["obstaculos"]
+    )
+    aparecer_varios(
+        tablero,
+        ORBE,
+        (ORBE, JUGADOR),
+        6,
+        datos["orbes"]
+    )
+    aparecer_varios(
+        tablero,
+        FUEGO,
+        (FUEGO, JUGADOR),
+        3,
+        datos["fuegos"]
+    )
+def refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa,nivel,vidas,tiempo_restante):
     """
     Dibuja el estado actual del tablero en la pantalla.
 
@@ -196,6 +232,17 @@ def refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta
             pos_x += ancho_elem
         pos_y += alto_elem
 
+    fuente = pygame.font.SysFont("Arial", 22)
+
+    texto = fuente.render(
+    f"Nivel {nivel}    Vidas: {vidas}    Tiempo: {tiempo_restante}",
+             True,
+             (255,255,255)
+            )
+
+    screen.blit(texto,(10,10))
+    
+    
     # Refresca el contenido que se ve en pantalla.
     pygame.display.flip()
 
@@ -297,7 +344,7 @@ def avanzar(tablero, pos_jugador, direccion):
     tablero[ind_nueva_fila][ind_nueva_col] = JUGADOR
 
     return "ok", (ind_nueva_col, ind_nueva_fila)
-def reiniciar():
+def reiniciar(nivel):
     """
     Crea un nuevo tablero y estado para una nueva partida.
 
@@ -341,7 +388,7 @@ def reiniciar():
     # tablero = [[VACIO] * COLUMNAS for _ in range(FILAS)]
     # El _ en el "for" indica que no usamos la variable con la que iteramos.
 
-    poblar_tablero(tablero)
+    poblar_tablero(tablero, nivel)
 
     # Colocamos al jugador en una posición aleatoria.
     pos_jugador = aparecer_aleatorio(tablero, JUGADOR)
@@ -421,14 +468,23 @@ def main():
     velocidad_animacion = 120
     sprite_actual= frente[0]
     tiempo_ultimo_mov = 0
-    VIDAS,RETRASO,NUM_ORBES,NUM_PLACAS,velocidad_animacion=2,200,0,0,120
-    tiempo_inicio = None       # Momento en que comienza el cronómetro
-    cronometro_activo = False  # Indica si ya empezó
-    TIEMPO_LIMITE = 25000      # 25 segundos (pygame trabaja en milisegundos)
+    NIVEL = 1
 
+    VIDAS = CONFIG_NIVELES[NIVEL]["vidas"]
+    RETRASO = 200
+
+    NUM_ORBES = 0
+    NUM_PLACAS = 0
+
+    velocidad_animacion = 120
+    tiempo_inicio = None
+    cronometro_activo = False
+    TIEMPO_LIMITE = CONFIG_NIVELES[NIVEL]["tiempo"]
     mostrar_pantalla(screen, PANTALLA_INICIO)
+    tiempo_restante = TIEMPO_LIMITE // 1000
 
     # Este es el bucle principal del juego, todo lo que sucede en el juego
+    
     # está aquí.
     while running:
         # Se analizan los eventos del bucle actual.
@@ -441,8 +497,10 @@ def main():
             if evento.type == pygame.KEYDOWN:
                 if estado == ESTADO_INICIO:
                     if evento.key == pygame.K_SPACE:
-                        tablero, pos_jugador = reiniciar()
-                        VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS,velocidad_animacion = 2,200,0,0,120
+                        NIVEL=1
+                        tablero, pos_jugador=reiniciar(NIVEL)
+                        VIDAS=CONFIG_NIVELES[NIVEL]["vidas"]
+                        TIEMPO_LIMITE = CONFIG_NIVELES[NIVEL]["tiempo"]
                         direccion = (0, 0)
                         # Obtiene tiempo en milisegundos
                         tiempo_ultimo_mov = pygame.time.get_ticks()
@@ -450,7 +508,7 @@ def main():
                         pygame.mixer.music.play(-1)
                         tiempo_inicio = None
                         cronometro_activo = False
-                        refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
+                        refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa, NIVEL,VIDAS,tiempo_restante)
                     elif evento.key == pygame.K_i:
                         estado = ESTADO_INSTRUCCIONES
                         mostrar_pantalla(screen, PANTALLA_INSTRUCCIONES)
@@ -461,15 +519,17 @@ def main():
 
                 elif estado in (ESTADO_DERROTA, ESTADO_VICTORIA):
                     if evento.key == pygame.K_r:
-                        tablero, pos_jugador = reiniciar()
-                        VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS,velocidad_animacion= 2,200,0,0,120
+                        NIVEL=1
+                        tablero, pos_jugador = reiniciar(NIVEL)
+                        VIDAS= CONFIG_NIVELES[NIVEL]["vidas"]
+                        TIEMPO_LIMITE=CONFIG_NIVELES[NIVEL]["tiempo"]
                         direccion = (0, 0)
                         tiempo_ultimo_mov = pygame.time.get_ticks()
                         estado = ESTADO_JUGANDO
                         pygame.mixer.music.play(-1)
                         tiempo_inicio = None
                         cronometro_activo = False
-                        refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
+                        refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa,NIVEL,VIDAS,tiempo_restante)
 
                     if evento.key == pygame.K_ESCAPE:
                         estado = ESTADO_INICIO
@@ -503,6 +563,7 @@ def main():
           tiempo_actual = pygame.time.get_ticks()  # En milisegundos
           if cronometro_activo:
             tiempo_transcurrido = tiempo_actual - tiempo_inicio
+            tiempo_restante=max(0,(TIEMPO_LIMITE-tiempo_transcurrido)//1000)
 
             if tiempo_transcurrido >= TIEMPO_LIMITE:
                     pygame.mixer.music.stop()
@@ -520,7 +581,7 @@ def main():
                 sprite_actual=izquierda[frame_actual]
             elif direccion==(1,0):
                 sprite_actual=derecha[frame_actual]
-            refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
+            refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa,NIVEL,VIDAS,tiempo_restante)
  
             if direccion != (0, 0) and tiempo_actual - tiempo_ultimo_mov >= RETRASO:
                 resultado, pos_jugador = avanzar(tablero, pos_jugador, direccion)
@@ -539,11 +600,55 @@ def main():
                     VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS,velocidad_animacion = 2,200,0,0,120
 
                 elif resultado == "victoria":
-                    pygame.mixer.music.stop()
-                    estado = ESTADO_VICTORIA
-                    mostrar_pantalla(screen, PANTALLA_VICTORIA)
-                    VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS, velocidad_animacion = 2,200,0,0,120
+                    if NIVEL < MAX_NIVELES:
 
+                        NIVEL += 1
+
+                        tablero, pos_jugador = reiniciar(NIVEL)
+
+                        VIDAS = CONFIG_NIVELES[NIVEL]["vidas"]
+                        TIEMPO_LIMITE = CONFIG_NIVELES[NIVEL]["tiempo"]
+
+                        NUM_ORBES = 0
+                        NUM_PLACAS = 0
+                        if NIVEL == 1:
+                            RETRASO = 200
+                            velocidad_animacion = 120
+
+                        elif NIVEL == 2:
+                            RETRASO = 170
+                            velocidad_animacion = 95
+
+                        elif NIVEL == 3:
+                            RETRASO = 140
+                            velocidad_animacion = 80
+
+                        direccion = (0, 0)
+
+                        tiempo_inicio = None
+                        cronometro_activo = False
+
+                        refrescar_tablero(screen,tablero,fondo,roca,sprite_actual, sprite_puerta,sprite_fuego, sprite_manzana ,sprite_placa,NIVEL,VIDAS,tiempo_restante )
+
+                    else:
+
+                     pygame.mixer.music.stop()
+
+                     estado = ESTADO_VICTORIA
+
+                     mostrar_pantalla(screen,PANTALLA_VICTORIA )
+
+                     NIVEL = 1
+
+                     VIDAS = CONFIG_NIVELES[NIVEL]["vidas"]
+
+                     RETRASO = 200
+
+                     NUM_ORBES = 0
+
+                     NUM_PLACAS = 0
+
+                     velocidad_animacion = 120
                 elif resultado == "orbe":
                     sonido_orbe.play()
                     NUM_ORBES += 1
@@ -555,7 +660,7 @@ def main():
                         aparecer_varios(tablero, FUEGO, (FUEGO,JUGADOR), 2, 2)
 
                     tiempo_ultimo_mov = tiempo_actual
-                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
+                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa,NIVEL,VIDAS,tiempo_restante)
 
                 elif resultado == "placa":
                     sonido_placa.play()
@@ -570,7 +675,7 @@ def main():
                         aparecer_varios(tablero, FUEGO, (FUEGO,JUGADOR), 2, 2)
 
                     tiempo_ultimo_mov = tiempo_actual
-                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
+                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa,NIVEL,VIDAS,tiempo_restante)
 
                 elif resultado == "fuego":
                     VIDAS -= 1
@@ -581,7 +686,7 @@ def main():
 
 
                     tiempo_ultimo_mov = tiempo_actual
-                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
+                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa,NIVEL,VIDAS,tiempo_restante)
 
                     if VIDAS == 0:
                         estado = ESTADO_DERROTA
@@ -591,7 +696,7 @@ def main():
 
                 else:
                     tiempo_ultimo_mov = tiempo_actual
-                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa)
+                    refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa,NIVEL,VIDAS,tiempo_restante)
 
     pygame.quit()
 
