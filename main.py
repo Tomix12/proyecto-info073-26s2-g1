@@ -123,15 +123,15 @@ def aparecer_aleatorio(tablero, id_elem):
 
     return columna, fila
 
-def aparecer_restringido(tablero, id_elem1, id_elem2, distancia):
-    if isinstance(id_elem2, int):
+def aparecer_restringido(tablero, id_elem1, id_elem2, distancia): #función mejorada de aparecer aleatorio que permíte restringir distancia entre elementos
+    if isinstance(id_elem2, int): #convierte id_elem2 en tupla si es necesario para que funcione el if de más abajo
         id_elem2 = (id_elem2,)
-    vacios = []
+    vacios = [] 
 
-    for fila in range(FILAS):
+    for fila in range(FILAS): #id_elem1 es el elemento a colocar e id_elem2 es el o los elementos en una tupla que no deben estar cerca
         for columna in range(COLUMNAS):
 
-            if tablero[fila][columna] != VACIO:
+            if tablero[fila][columna] != VACIO: 
                 continue
 
             permitido = True
