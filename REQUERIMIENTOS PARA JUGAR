@@ -1,2 +1,2 @@
 pygame
-opencv-python
+pip install opencv-python
