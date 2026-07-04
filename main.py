@@ -673,8 +673,8 @@ def main():
                     sonido_orbe.play() 
                     NUM_ORBES += 1
                     if NIVEL==1:
-                      RETRASO -= 30
-                      velocidad_animacion -=20
+                      RETRASO -= 20
+                      velocidad_animacion -=15
                     elif NIVEL==2:
                         RETRASO-=20
                         velocidad_animacion-=10
