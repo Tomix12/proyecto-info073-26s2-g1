@@ -1,15 +1,15 @@
 # Importamos módulos requeridos
 import os
 import random
-
 import pygame
-
+import cv2
 # Estados del juego
 ESTADO_INICIO = "inicio"
 ESTADO_INSTRUCCIONES = "instrucciones"
 ESTADO_JUGANDO = "jugando"
 ESTADO_DERROTA = "derrota"
 ESTADO_VICTORIA = "victoria"
+ESTADO_CINEMATICA="cinematica"
 NIVEL=1
 MAX_NIVELES=3
 CONFIG_NIVELES = {
@@ -24,7 +24,7 @@ CONFIG_NIVELES = {
     },
 
     2: {
-        "vidas": 2,
+        "vidas": 4,
         "tiempo": 45000,
         "obstaculos": 8,
         "fuegos": 4,
@@ -34,7 +34,7 @@ CONFIG_NIVELES = {
     },
 
     3: {
-        "vidas": 2,
+        "vidas": 4,
         "tiempo": 40000,
         "obstaculos": 11,
         "fuegos": 6,
@@ -64,14 +64,45 @@ PUERTA = 3
 ORBE = 4
 PLACA = 5
 FUEGO = 6
-
-
 # Tamaño del tablero
 # Si se cambian estas constantes, se debe modificar la definición
 # del tablero que se encuentra1 en función reiniciar().
 FILAS = 15
 COLUMNAS = 15
+def reproducir_cinematica(screen, ruta_video):
+    video = cv2.VideoCapture(ruta_video)
+    reloj = pygame.time.Clock()
 
+    while video.isOpened():
+
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                video.release()
+                return False
+
+            # Permitir saltar la cinemática
+            if evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_SPACE:
+                    video.release()
+                    return True
+
+        ret, frame = video.read()
+
+        if not ret:
+            break
+
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame = cv2.resize(frame, (800,800))
+
+        superficie = pygame.surfarray.make_surface(frame.swapaxes(0,1))
+
+        screen.blit(superficie,(0,0))
+        pygame.display.flip()
+
+        reloj.tick(30)
+
+    video.release()
+    return True
 def aparecer_varios(tablero, id_elem1, id_elem2, distancia, cantidad):
     for num in range(cantidad):
         aparecer_restringido(tablero, id_elem1, id_elem2, distancia)
@@ -460,6 +491,7 @@ def main():
     izquierda=[pygame.transform.scale(s,(tam_celda, tam_celda)) for s in izquierda]
     derecha=[pygame.transform.scale(s,(tam_celda, tam_celda)) for s in derecha]
     roca=pygame.image.load(DIR_roca).convert_alpha()
+    VIDEO_INTRO="data/videos/intro.mp4"
     # Establecemos el título de la ventana.
     pygame.display.set_caption("Crimson")
 
@@ -490,6 +522,7 @@ def main():
     
     # está aquí.
     while running:
+        
         # Se analizan los eventos del bucle actual.
         for evento in pygame.event.get():
             # Si es que se quiere cerrar la ventana.
@@ -501,7 +534,6 @@ def main():
                 if estado == ESTADO_INICIO:
                     if evento.key == pygame.K_SPACE:
                         NIVEL=1
-                        tablero, pos_jugador=reiniciar(NIVEL)
                         VIDAS=CONFIG_NIVELES[NIVEL]["vidas"]
                         TIEMPO_LIMITE = CONFIG_NIVELES[NIVEL]["tiempo"]
                         RETRASO=CONFIG_NIVELES[NIVEL]["retraso"]
@@ -510,15 +542,19 @@ def main():
                         direccion = (0, 0)
                         # Obtiene tiempo en milisegundos
                         tiempo_ultimo_mov = pygame.time.get_ticks()
-                        estado = ESTADO_JUGANDO
-                        pygame.mixer.music.play(-1)
+                        estado = ESTADO_CINEMATICA
                         tiempo_inicio = None
                         cronometro_activo = False
-                        refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa, NIVEL,VIDAS,tiempo_restante)
                     elif evento.key == pygame.K_i:
                         estado = ESTADO_INSTRUCCIONES
                         mostrar_pantalla(screen, PANTALLA_INSTRUCCIONES)
-
+                if estado==  ESTADO_CINEMATICA:
+                 reproducir_cinematica(screen, VIDEO_INTRO)
+                 tablero,pos_jugador=reiniciar(NIVEL)
+                 estado=ESTADO_JUGANDO
+                 tiempo_inicio=None
+                 pygame.mixer.music.play(-1)
+                 refrescar_tablero(screen,tablero,fondo,roca,sprite_actual, sprite_puerta,sprite_fuego,sprite_manzana,sprite_placa,NIVEL,VIDAS,tiempo_restante)
                 elif estado == ESTADO_INSTRUCCIONES:
                     estado = ESTADO_INICIO
                     mostrar_pantalla(screen, PANTALLA_INICIO)
@@ -673,8 +709,8 @@ def main():
                     sonido_orbe.play() 
                     NUM_ORBES += 1
                     if NIVEL==1:
-                      RETRASO -= 20
-                      velocidad_animacion -=15
+                      RETRASO -= 30
+                      velocidad_animacion -=20
                     elif NIVEL==2:
                         RETRASO-=20
                         velocidad_animacion-=10
