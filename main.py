@@ -14,27 +14,33 @@ NIVEL=1
 MAX_NIVELES=3
 CONFIG_NIVELES = {
     1: {
-        "vidas": 2,
-        "tiempo": 25000,
+        "vidas": 3,
+        "tiempo": 40000,
         "obstaculos": 5,
         "fuegos": 2,
-        "orbes": 2
+        "orbes": 2,
+        "retraso":260,
+        "animacion":200
     },
 
     2: {
         "vidas": 2,
-        "tiempo": 20000,
-        "obstaculos": 9,
-        "fuegos": 5,
-        "orbes": 3
+        "tiempo": 45000,
+        "obstaculos": 8,
+        "fuegos": 4,
+        "orbes": 3,
+        "retraso":250,
+        "animacion":180
     },
 
     3: {
-        "vidas": 1,
-        "tiempo": 15000,
-        "obstaculos": 13,
-        "fuegos": 8,
-        "orbes": 4
+        "vidas": 2,
+        "tiempo": 40000,
+        "obstaculos": 11,
+        "fuegos": 6,
+        "orbes": 4,
+        "retraso":200,
+        "animacion":140
     }
 }
 # Rutas a la carpeta de imágenes de pantallas
@@ -123,15 +129,15 @@ def aparecer_aleatorio(tablero, id_elem):
 
     return columna, fila
 
-def aparecer_restringido(tablero, id_elem1, id_elem2, distancia): #función mejorada de aparecer aleatorio que permíte restringir distancia entre elementos
-    if isinstance(id_elem2, int): #convierte id_elem2 en tupla si es necesario para que funcione el if de más abajo
+def aparecer_restringido(tablero, id_elem1, id_elem2, distancia):
+    if isinstance(id_elem2, int):
         id_elem2 = (id_elem2,)
-    vacios = [] 
+    vacios = []
 
-    for fila in range(FILAS): #id_elem1 es el elemento a colocar e id_elem2 es el o los elementos en una tupla que no deben estar cerca
+    for fila in range(FILAS):
         for columna in range(COLUMNAS):
 
-            if tablero[fila][columna] != VACIO: 
+            if tablero[fila][columna] != VACIO:
                 continue
 
             permitido = True
@@ -469,14 +475,11 @@ def main():
     sprite_actual= frente[0]
     tiempo_ultimo_mov = 0
     NIVEL = 1
-
     VIDAS = CONFIG_NIVELES[NIVEL]["vidas"]
-    RETRASO = 200
-
+    RETRASO = CONFIG_NIVELES[NIVEL]["retraso"]
     NUM_ORBES = 0
     NUM_PLACAS = 0
-
-    velocidad_animacion = 120
+    velocidad_animacion =CONFIG_NIVELES[NIVEL]["animacion"]
     tiempo_inicio = None
     cronometro_activo = False
     TIEMPO_LIMITE = CONFIG_NIVELES[NIVEL]["tiempo"]
@@ -501,6 +504,9 @@ def main():
                         tablero, pos_jugador=reiniciar(NIVEL)
                         VIDAS=CONFIG_NIVELES[NIVEL]["vidas"]
                         TIEMPO_LIMITE = CONFIG_NIVELES[NIVEL]["tiempo"]
+                        RETRASO=CONFIG_NIVELES[NIVEL]["retraso"]
+                        velocidad_animacion=CONFIG_NIVELES[NIVEL]["animacion"]
+                        tiempo_restante=TIEMPO_LIMITE//1000
                         direccion = (0, 0)
                         # Obtiene tiempo en milisegundos
                         tiempo_ultimo_mov = pygame.time.get_ticks()
@@ -523,6 +529,10 @@ def main():
                         tablero, pos_jugador = reiniciar(NIVEL)
                         VIDAS= CONFIG_NIVELES[NIVEL]["vidas"]
                         TIEMPO_LIMITE=CONFIG_NIVELES[NIVEL]["tiempo"]
+                        RETRASO=CONFIG_NIVELES[NIVEL]["retraso"]
+                        NUM_ORBES=0
+                        velocidad_animacion=CONFIG_NIVELES[NIVEL]["animacion"]
+                        tiempo_restante=TIEMPO_LIMITE//1000
                         direccion = (0, 0)
                         tiempo_ultimo_mov = pygame.time.get_ticks()
                         estado = ESTADO_JUGANDO
@@ -597,8 +607,18 @@ def main():
                     pygame.mixer.music.stop()
                     estado = ESTADO_DERROTA
                     mostrar_pantalla(screen, PANTALLA_DERROTA)
-                    VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS,velocidad_animacion = 2,200,0,0,120
-
+                    NIVEL=1
+                    VIDAS=CONFIG_NIVELES[NIVEL]["vidas"]
+                    RETRASO=CONFIG_NIVELES[NIVEL]["retraso"]
+                    velocidad_animacion=CONFIG_NIVELES[NIVEL]["animacion"]
+                    NUM_ORBES=0
+                    NUM_PLACAS=0
+                    NIVEL=1
+                    TIEMPO_LIMITE=CONFIG_NIVELES[NIVEL]["tiempo"]
+                    tiempo_restante= TIEMPO_LIMITE//1000
+                    cronometro_activo= False
+                    tiempo_inicio= None
+                    direccion=(0,0)
                 elif resultado == "victoria":
                     if NIVEL < MAX_NIVELES:
 
@@ -608,20 +628,22 @@ def main():
 
                         VIDAS = CONFIG_NIVELES[NIVEL]["vidas"]
                         TIEMPO_LIMITE = CONFIG_NIVELES[NIVEL]["tiempo"]
+                        tiempo_ultimo_mov=pygame.time.get_ticks()
+                        tiempo_restante= TIEMPO_LIMITE//1000
 
                         NUM_ORBES = 0
                         NUM_PLACAS = 0
                         if NIVEL == 1:
-                            RETRASO = 200
-                            velocidad_animacion = 120
+                            RETRASO = CONFIG_NIVELES[NIVEL]["retraso"]
+                            velocidad_animacion = CONFIG_NIVELES[NIVEL]["animacion"]
 
                         elif NIVEL == 2:
-                            RETRASO = 170
-                            velocidad_animacion = 95
+                            RETRASO = CONFIG_NIVELES[NIVEL]["retraso"]
+                            velocidad_animacion = CONFIG_NIVELES[NIVEL]["animacion"]
 
                         elif NIVEL == 3:
-                            RETRASO = 140
-                            velocidad_animacion = 80
+                            RETRASO = CONFIG_NIVELES[NIVEL]["retraso"]
+                            velocidad_animacion = CONFIG_NIVELES[NIVEL]["animacion"]
 
                         direccion = (0, 0)
 
@@ -637,37 +659,40 @@ def main():
                      estado = ESTADO_VICTORIA
 
                      mostrar_pantalla(screen,PANTALLA_VICTORIA )
-
                      NIVEL = 1
-
                      VIDAS = CONFIG_NIVELES[NIVEL]["vidas"]
-
-                     RETRASO = 200
-
+                     TIEMPO_LIMITE=CONFIG_NIVELES[NIVEL]["tiempo"]
+                     RETRASO = CONFIG_NIVELES[NIVEL]["retraso"]
+                     velocidad_animacion=CONFIG_NIVELES[NIVEL]["animacion"]
+                     direccion=(0,0)
+                     cronometro_activo= False
+                     tiempo_inicio= None
                      NUM_ORBES = 0
-
                      NUM_PLACAS = 0
-
-                     velocidad_animacion = 120
                 elif resultado == "orbe":
-                    sonido_orbe.play()
+                    sonido_orbe.play() 
                     NUM_ORBES += 1
-                    RETRASO -= 20
-                    velocidad_animacion -=10
-
-                    if NUM_ORBES == 2 or NUM_ORBES == 4 or NUM_ORBES == 6:
+                    if NIVEL==1:
+                      RETRASO -= 30
+                      velocidad_animacion -=20
+                    elif NIVEL==2:
+                        RETRASO-=20
+                        velocidad_animacion-=10
+                    elif NIVEL==3:
+                        RETRASO-=15
+                        velocidad_animacion-=9    
+                    if NUM_ORBES == CONFIG_NIVELES[NIVEL]["orbes"]:
                         aparecer_restringido(tablero, PLACA, JUGADOR, 5)
                         aparecer_varios(tablero, FUEGO, (FUEGO,JUGADOR), 2, 2)
-
                     tiempo_ultimo_mov = tiempo_actual
                     refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa,NIVEL,VIDAS,tiempo_restante)
-
                 elif resultado == "placa":
                     sonido_placa.play()
+                    NUM_ORBES=0
                     NUM_PLACAS += 1
 
                     if NUM_PLACAS < 3:
-                        aparecer_varios(tablero, ORBE, (ORBE,JUGADOR), 6, 2)
+                        aparecer_varios(tablero, ORBE, (ORBE,JUGADOR), 6, CONFIG_NIVELES[NIVEL]["orbes"])
                         aparecer_varios(tablero, FUEGO, (FUEGO,JUGADOR), 2, 2)
 
                     if NUM_PLACAS == 3:
@@ -679,12 +704,16 @@ def main():
 
                 elif resultado == "fuego":
                     VIDAS -= 1
-
-                    if RETRASO != 200:
-                        RETRASO += 20
-                        velocidad_animacion +=10
-
-
+                    if RETRASO != CONFIG_NIVELES[NIVEL]["retraso"]:
+                      if NIVEL==1:
+                        RETRASO += 30
+                        velocidad_animacion +=20
+                      elif NIVEL==2:
+                          RETRASO+=20
+                          velocidad_animacion+=10
+                      elif NIVEL==3:
+                          RETRASO+=15
+                          velocidad_animacion+=9                   
                     tiempo_ultimo_mov = tiempo_actual
                     refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa,NIVEL,VIDAS,tiempo_restante)
 
@@ -692,7 +721,11 @@ def main():
                         estado = ESTADO_DERROTA
                         pygame.mixer.music.stop()
                         mostrar_pantalla(screen, PANTALLA_DERROTA)
-                        VIDAS, RETRASO, NUM_ORBES, NUM_PLACAS, velocidad_animacion = 2,200,0,0,120
+                        VIDAS=CONFIG_NIVELES[NIVEL]["vidas"]
+                        RETRASO=CONFIG_NIVELES[NIVEL]["retraso"]
+                        velocidad_animacion=CONFIG_NIVELES[NIVEL]["animacion"]
+                        NUM_ORBES=0
+                        NUM_PLACAS=0
 
                 else:
                     tiempo_ultimo_mov = tiempo_actual
