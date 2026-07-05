@@ -19,7 +19,7 @@ CONFIG_NIVELES = {
         "obstaculos": 5,
         "fuegos": 2,
         "orbes": 2,
-        "retraso":260,
+        "retraso":240,
         "animacion":200
     },
 
@@ -35,7 +35,7 @@ CONFIG_NIVELES = {
 
     3: {
         "vidas": 4,
-        "tiempo": 40000,
+        "tiempo": 50000,
         "obstaculos": 11,
         "fuegos": 6,
         "orbes": 4,
@@ -54,7 +54,7 @@ PANTALLA_VICTORIA = "pantalla_victoria.bmp"
 PANTALLA_DERROTA = "pantalla_derrota.bmp"
 
 # Para evitar que el jugador se mueva demasiado rápido
-RETRASO = 100
+RETRASO = 0
 
 # Códigos de cada elemento del tablero
 VACIO = 0
@@ -548,13 +548,6 @@ def main():
                     elif evento.key == pygame.K_i:
                         estado = ESTADO_INSTRUCCIONES
                         mostrar_pantalla(screen, PANTALLA_INSTRUCCIONES)
-                if estado==  ESTADO_CINEMATICA:
-                 reproducir_cinematica(screen, VIDEO_INTRO)
-                 tablero,pos_jugador=reiniciar(NIVEL)
-                 estado=ESTADO_JUGANDO
-                 tiempo_inicio=None
-                 pygame.mixer.music.play(-1)
-                 refrescar_tablero(screen,tablero,fondo,roca,sprite_actual, sprite_puerta,sprite_fuego,sprite_manzana,sprite_placa,NIVEL,VIDAS,tiempo_restante)
                 elif estado == ESTADO_INSTRUCCIONES:
                     estado = ESTADO_INICIO
                     mostrar_pantalla(screen, PANTALLA_INICIO)
@@ -603,8 +596,13 @@ def main():
                     elif  keys[pygame.K_d]:
                         direccion=(1,0) 
                         sprite_actual=derecha[frame_actual]
-                                
-
+        if estado==  ESTADO_CINEMATICA:
+                 reproducir_cinematica(screen, VIDEO_INTRO)
+                 tablero,pos_jugador=reiniciar(NIVEL)
+                 estado=ESTADO_JUGANDO
+                 tiempo_inicio=None
+                 pygame.mixer.music.play(-1)
+                 refrescar_tablero(screen,tablero,fondo,roca,sprite_actual, sprite_puerta,sprite_fuego,sprite_manzana,sprite_placa,NIVEL,VIDAS,tiempo_restante)                                 
         if estado == ESTADO_JUGANDO:
           tiempo_actual = pygame.time.get_ticks()  # En milisegundos
           if cronometro_activo:
@@ -615,6 +613,8 @@ def main():
                     pygame.mixer.music.stop()
                     estado = ESTADO_DERROTA
                     mostrar_pantalla(screen, PANTALLA_DERROTA)
+                    NUM_ORBES=0
+                    NUM_PLACAS=0
           #animacion
         if direccion != (0,0) and tiempo_actual - tiempo_animacion >= velocidad_animacion:
             frame_actual = (frame_actual + 1) % 4
@@ -709,8 +709,8 @@ def main():
                     sonido_orbe.play() 
                     NUM_ORBES += 1
                     if NIVEL==1:
-                      RETRASO -= 30
-                      velocidad_animacion -=20
+                      RETRASO -= 10
+                      velocidad_animacion -=10
                     elif NIVEL==2:
                         RETRASO-=20
                         velocidad_animacion-=10
