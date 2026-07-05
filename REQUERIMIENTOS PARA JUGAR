@@ -1,2 +1,3 @@
 REQUISITO MAS IMPORTANTE
+abrir powershell,ejecutar como admin y copiar y pegar comando:
 pip install opencv-python
