@@ -15,7 +15,7 @@ MAX_NIVELES=3
 CONFIG_NIVELES = {
     1: {
         "vidas": 3,
-        "tiempo": 40000,
+        "tiempo": 50000,
         "obstaculos": 5,
         "fuegos": 2,
         "orbes": 2,
@@ -25,7 +25,7 @@ CONFIG_NIVELES = {
 
     2: {
         "vidas": 4,
-        "tiempo": 45000,
+        "tiempo": 55000,
         "obstaculos": 8,
         "fuegos": 4,
         "orbes": 3,
@@ -35,11 +35,11 @@ CONFIG_NIVELES = {
 
     3: {
         "vidas": 4,
-        "tiempo": 40000,
+        "tiempo": 55000,
         "obstaculos": 11,
         "fuegos": 6,
         "orbes": 4,
-        "retraso":200,
+        "retraso"240,
         "animacion":140
     }
 }
