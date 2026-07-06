@@ -19,7 +19,7 @@ CONFIG_NIVELES = {
         "obstaculos": 5,
         "fuegos": 2,
         "orbes": 2,
-        "retraso":240,
+        "retraso":260,
         "animacion":200
     },
 
@@ -35,7 +35,7 @@ CONFIG_NIVELES = {
 
     3: {
         "vidas": 4,
-        "tiempo": 50000,
+        "tiempo": 40000,
         "obstaculos": 11,
         "fuegos": 6,
         "orbes": 4,
@@ -54,7 +54,7 @@ PANTALLA_VICTORIA = "pantalla_victoria.bmp"
 PANTALLA_DERROTA = "pantalla_derrota.bmp"
 
 # Para evitar que el jugador se mueva demasiado rápido
-RETRASO = 0
+RETRASO = 100
 
 # Códigos de cada elemento del tablero
 VACIO = 0
@@ -69,21 +69,26 @@ FUEGO = 6
 # del tablero que se encuentra1 en función reiniciar().
 FILAS = 15
 COLUMNAS = 15
-def reproducir_cinematica(screen, ruta_video):
+def reproducir_cinematica(screen, ruta_video, ruta_audio=None):
     video = cv2.VideoCapture(ruta_video)
     reloj = pygame.time.Clock()
+    if ruta_audio:
+        pygame.mixer.music.load(ruta_audio)
+        pygame.mixer.music.play()
 
     while video.isOpened():
 
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 video.release()
+                pygame.mixer.music.stop()
                 return False
 
             # Permitir saltar la cinemática
             if evento.type == pygame.KEYDOWN:
                 if evento.key == pygame.K_SPACE:
                     video.release()
+                    pygame.mixer.music.stop()
                     return True
 
         ret, frame = video.read()
@@ -102,6 +107,7 @@ def reproducir_cinematica(screen, ruta_video):
         reloj.tick(30)
 
     video.release()
+    pygame.mixer.music.stop()
     return True
 def aparecer_varios(tablero, id_elem1, id_elem2, distancia, cantidad):
     for num in range(cantidad):
@@ -219,6 +225,22 @@ def poblar_tablero(tablero,nivel):
         3,
         datos["fuegos"]
     )
+def flash_dano(screen):
+                        flash = pygame.Surface(screen.get_size())
+                        flash.fill((150, 0, 0))
+                        flash.set_alpha(120)
+                        screen.blit(flash, (0,0))
+                        pygame.display.flip()
+                        pygame.time.delay(80)
+def fade_transicion(screen, color=(20,0,0)):
+    fade = pygame.Surface(screen.get_size())
+    fade.fill(color)
+    for alpha in range(0, 255, 15):
+        fade.set_alpha(alpha)
+        screen.blit(fade, (0,0))
+        pygame.display.flip()
+        pygame.time.delay(15)
+
 def refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa,nivel,vidas,tiempo_restante):
     """
     Dibuja el estado actual del tablero en la pantalla.
@@ -466,9 +488,14 @@ def main():
     pygame.mixer.music.set_volume(0.5)  # 0.0 a 1.0
     sonido_orbe = pygame.mixer.Sound("data/sonidos/orbe.wav")
     sonido_placa = pygame.mixer.Sound("data/sonidos/placa.wav")
+    sonido_golpe = pygame.mixer.Sound("data/sonidos/golpe.mp3")
+    sonido_quemadura = pygame.mixer.Sound("data/sonidos/quemadura.mp3")
     DIR_BACKGROUND= os.path.join(os.path.dirname(__file__),"data","background","Fondo.jpg") #Esto es del fondo en carpeta background que subire
     fondo=pygame.image.load(DIR_BACKGROUND)         #Nota de Tomás: este codigo carga el directorio del fondo  
     fondo= pygame.transform.scale(fondo, (800, 800)) #Este codigo transforma la escala de la imagen a 800x800 pixeles(aunque lo cambie antes de ingresaar)
+    tinte = pygame.Surface(fondo.get_size())
+    tinte.fill((60, 25, 20))
+    fondo.blit(tinte, (0,0), special_flags=pygame.BLEND_MULT)
     DIR_roca=os.path.join("data","sprites","OBSTACULO.png")#Nota tomás: ruta de la roca     
     screen= pygame.display.set_mode((800, 800))#Esta es la escala en la que correra el juego(no la imagen)
     # por aqui importamos los archivos sprites de los mvimentos de los personajes
@@ -480,8 +507,14 @@ def main():
     tam_celda=800//15
     sprite_puerta = pygame.image.load("data/sprites/puerta.png").convert_alpha()
     sprite_puerta = pygame.transform.scale(sprite_puerta, (tam_celda, tam_celda))
-    sprite_fuego = pygame.image.load("data/sprites/fuego.png").convert_alpha()
-    sprite_fuego = pygame.transform.scale(sprite_fuego, (tam_celda, tam_celda))
+    fuego_frames = [
+        pygame.image.load("data/sprites/fuego_1.png").convert_alpha(),
+        pygame.image.load("data/sprites/fuego_2.png").convert_alpha(),
+        pygame.image.load("data/sprites/fuego_3.png").convert_alpha(),
+        pygame.image.load("data/sprites/fuego_4.png").convert_alpha(),
+    ]
+    fuego_frames = [pygame.transform.scale(s, (tam_celda, tam_celda)) for s in fuego_frames]
+
     sprite_manzana = pygame.image.load("data/sprites/orbe.png").convert_alpha()
     sprite_manzana = pygame.transform.scale(sprite_manzana, (tam_celda, tam_celda))
     sprite_placa = pygame.image.load("data/sprites/placa.png").convert_alpha()
@@ -492,6 +525,8 @@ def main():
     derecha=[pygame.transform.scale(s,(tam_celda, tam_celda)) for s in derecha]
     roca=pygame.image.load(DIR_roca).convert_alpha()
     VIDEO_INTRO="data/videos/intro.mp4"
+    AUDIO_INTRO="data/sonidos/intro_audio.mp3"
+    MUSICA_JUEGO="data/sonidos/musica.mp3"
     # Establecemos el título de la ventana.
     pygame.display.set_caption("Crimson")
 
@@ -504,7 +539,11 @@ def main():
     frame_actual=0
     tiempo_animacion = 0
     velocidad_animacion = 120
+    frame_fuego = 0
+    tiempo_fuego = 0 
+    velocidad_fuego = 150
     sprite_actual= frente[0]
+    sprite_fuego = fuego_frames[0]
     tiempo_ultimo_mov = 0
     NIVEL = 1
     VIDAS = CONFIG_NIVELES[NIVEL]["vidas"]
@@ -548,6 +587,14 @@ def main():
                     elif evento.key == pygame.K_i:
                         estado = ESTADO_INSTRUCCIONES
                         mostrar_pantalla(screen, PANTALLA_INSTRUCCIONES)
+                if estado==  ESTADO_CINEMATICA:
+                 reproducir_cinematica(screen, VIDEO_INTRO, AUDIO_INTRO)
+                 tablero,pos_jugador=reiniciar(NIVEL)
+                 estado=ESTADO_JUGANDO
+                 tiempo_inicio=None
+                 pygame.mixer.music.load(MUSICA_JUEGO)
+                 pygame.mixer.music.play(-1)
+                 refrescar_tablero(screen,tablero,fondo,roca,sprite_actual, sprite_puerta,sprite_fuego,sprite_manzana,sprite_placa,NIVEL,VIDAS,tiempo_restante)
                 elif estado == ESTADO_INSTRUCCIONES:
                     estado = ESTADO_INICIO
                     mostrar_pantalla(screen, PANTALLA_INICIO)
@@ -596,15 +643,14 @@ def main():
                     elif  keys[pygame.K_d]:
                         direccion=(1,0) 
                         sprite_actual=derecha[frame_actual]
-        if estado==  ESTADO_CINEMATICA:
-                 reproducir_cinematica(screen, VIDEO_INTRO)
-                 tablero,pos_jugador=reiniciar(NIVEL)
-                 estado=ESTADO_JUGANDO
-                 tiempo_inicio=None
-                 pygame.mixer.music.play(-1)
-                 refrescar_tablero(screen,tablero,fondo,roca,sprite_actual, sprite_puerta,sprite_fuego,sprite_manzana,sprite_placa,NIVEL,VIDAS,tiempo_restante)                                 
+                                
+
         if estado == ESTADO_JUGANDO:
           tiempo_actual = pygame.time.get_ticks()  # En milisegundos
+          if tiempo_actual - tiempo_fuego >= velocidad_fuego: 
+              frame_fuego = (frame_fuego + 1) % 4                
+              tiempo_fuego = tiempo_actual                         
+              sprite_fuego = fuego_frames[frame_fuego]             
           if cronometro_activo:
             tiempo_transcurrido = tiempo_actual - tiempo_inicio
             tiempo_restante=max(0,(TIEMPO_LIMITE-tiempo_transcurrido)//1000)
@@ -612,9 +658,8 @@ def main():
             if tiempo_transcurrido >= TIEMPO_LIMITE:
                     pygame.mixer.music.stop()
                     estado = ESTADO_DERROTA
+                    fade_transicion(screen)
                     mostrar_pantalla(screen, PANTALLA_DERROTA)
-                    NUM_ORBES=0
-                    NUM_PLACAS=0
           #animacion
         if direccion != (0,0) and tiempo_actual - tiempo_animacion >= velocidad_animacion:
             frame_actual = (frame_actual + 1) % 4
@@ -640,8 +685,10 @@ def main():
                 elif direccion==(1,0):
                     sprite_actual=derecha[frame_actual]
                 if resultado == "derrota":
+                    sonido_golpe.play()
                     pygame.mixer.music.stop()
                     estado = ESTADO_DERROTA
+                    fade_transicion(screen)
                     mostrar_pantalla(screen, PANTALLA_DERROTA)
                     NIVEL=1
                     VIDAS=CONFIG_NIVELES[NIVEL]["vidas"]
@@ -693,7 +740,7 @@ def main():
                      pygame.mixer.music.stop()
 
                      estado = ESTADO_VICTORIA
-
+                     fade_transicion(screen)
                      mostrar_pantalla(screen,PANTALLA_VICTORIA )
                      NIVEL = 1
                      VIDAS = CONFIG_NIVELES[NIVEL]["vidas"]
@@ -709,8 +756,8 @@ def main():
                     sonido_orbe.play() 
                     NUM_ORBES += 1
                     if NIVEL==1:
-                      RETRASO -= 10
-                      velocidad_animacion -=10
+                      RETRASO -= 30
+                      velocidad_animacion -=20
                     elif NIVEL==2:
                         RETRASO-=20
                         velocidad_animacion-=10
@@ -739,6 +786,8 @@ def main():
                     refrescar_tablero(screen, tablero, fondo, roca, sprite_actual, sprite_puerta, sprite_fuego, sprite_manzana, sprite_placa,NIVEL,VIDAS,tiempo_restante)
 
                 elif resultado == "fuego":
+                    
+                    flash_dano(screen)
                     VIDAS -= 1
                     if RETRASO != CONFIG_NIVELES[NIVEL]["retraso"]:
                       if NIVEL==1:
@@ -756,6 +805,7 @@ def main():
                     if VIDAS == 0:
                         estado = ESTADO_DERROTA
                         pygame.mixer.music.stop()
+                        fade_transicion(screen)
                         mostrar_pantalla(screen, PANTALLA_DERROTA)
                         VIDAS=CONFIG_NIVELES[NIVEL]["vidas"]
                         RETRASO=CONFIG_NIVELES[NIVEL]["retraso"]
