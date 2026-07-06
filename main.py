@@ -494,7 +494,7 @@ def main():
     fondo=pygame.image.load(DIR_BACKGROUND)         #Nota de Tomás: este codigo carga el directorio del fondo  
     fondo= pygame.transform.scale(fondo, (800, 800)) #Este codigo transforma la escala de la imagen a 800x800 pixeles(aunque lo cambie antes de ingresaar)
     tinte = pygame.Surface(fondo.get_size())
-    tinte.fill((60, 25, 20))
+    tinte.fill((120,50,40))
     fondo.blit(tinte, (0,0), special_flags=pygame.BLEND_MULT)
     DIR_roca=os.path.join("data","sprites","OBSTACULO.png")#Nota tomás: ruta de la roca     
     screen= pygame.display.set_mode((800, 800))#Esta es la escala en la que correra el juego(no la imagen)
@@ -587,14 +587,6 @@ def main():
                     elif evento.key == pygame.K_i:
                         estado = ESTADO_INSTRUCCIONES
                         mostrar_pantalla(screen, PANTALLA_INSTRUCCIONES)
-                if estado==  ESTADO_CINEMATICA:
-                 reproducir_cinematica(screen, VIDEO_INTRO, AUDIO_INTRO)
-                 tablero,pos_jugador=reiniciar(NIVEL)
-                 estado=ESTADO_JUGANDO
-                 tiempo_inicio=None
-                 pygame.mixer.music.load(MUSICA_JUEGO)
-                 pygame.mixer.music.play(-1)
-                 refrescar_tablero(screen,tablero,fondo,roca,sprite_actual, sprite_puerta,sprite_fuego,sprite_manzana,sprite_placa,NIVEL,VIDAS,tiempo_restante)
                 elif estado == ESTADO_INSTRUCCIONES:
                     estado = ESTADO_INICIO
                     mostrar_pantalla(screen, PANTALLA_INICIO)
@@ -606,6 +598,7 @@ def main():
                         VIDAS= CONFIG_NIVELES[NIVEL]["vidas"]
                         TIEMPO_LIMITE=CONFIG_NIVELES[NIVEL]["tiempo"]
                         RETRASO=CONFIG_NIVELES[NIVEL]["retraso"]
+                        NUM_PLACAS=0
                         NUM_ORBES=0
                         velocidad_animacion=CONFIG_NIVELES[NIVEL]["animacion"]
                         tiempo_restante=TIEMPO_LIMITE//1000
@@ -644,7 +637,14 @@ def main():
                         direccion=(1,0) 
                         sprite_actual=derecha[frame_actual]
                                 
-
+        if estado==  ESTADO_CINEMATICA:
+                 reproducir_cinematica(screen, VIDEO_INTRO, AUDIO_INTRO)
+                 tablero,pos_jugador=reiniciar(NIVEL)
+                 estado=ESTADO_JUGANDO
+                 tiempo_inicio=None
+                 pygame.mixer.music.load(MUSICA_JUEGO)
+                 pygame.mixer.music.play(-1)
+                 refrescar_tablero(screen,tablero,fondo,roca,sprite_actual, sprite_puerta,sprite_fuego,sprite_manzana,sprite_placa,NIVEL,VIDAS,tiempo_restante)
         if estado == ESTADO_JUGANDO:
           tiempo_actual = pygame.time.get_ticks()  # En milisegundos
           if tiempo_actual - tiempo_fuego >= velocidad_fuego: 
@@ -658,6 +658,8 @@ def main():
             if tiempo_transcurrido >= TIEMPO_LIMITE:
                     pygame.mixer.music.stop()
                     estado = ESTADO_DERROTA
+                    NUM_ORBES=0
+                    NUM_PLACAS=0
                     fade_transicion(screen)
                     mostrar_pantalla(screen, PANTALLA_DERROTA)
           #animacion
@@ -756,10 +758,10 @@ def main():
                     sonido_orbe.play() 
                     NUM_ORBES += 1
                     if NIVEL==1:
-                      RETRASO -= 30
-                      velocidad_animacion -=20
+                      RETRASO -= 10
+                      velocidad_animacion -=10
                     elif NIVEL==2:
-                        RETRASO-=20
+                        RETRASO-=15
                         velocidad_animacion-=10
                     elif NIVEL==3:
                         RETRASO-=15
